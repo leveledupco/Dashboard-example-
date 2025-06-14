@@ -1,1 +1,415 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced PLG Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .funnel-container {
+            height: 400px;
+        }
+        .glow {
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+        .smooth-line {
+            tension: 0.4;
+            borderWidth: 2;
+        }
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-200 p-4 md:p-8 max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="mb-8">
+        <h1 class="text-3xl font-bold text-primary mb-2">PLG Growth Dashboard</h1>
+        <p class="text-gray-400">Product-Led Growth Analytics with Channel Attribution</p>
+    </header>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-grid">
+        <!-- Growth by Channel -->
+        <div class="card p-6 glow">
+            <h2 class="text-xl font-bold mb-4 text-primary">
+                <i class="fas fa-chart-pie mr-2"></i>Growth by Channel
+            </h2>
+            <div class="chart-container">
+                <canvas id="channel-chart"></canvas>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Top Channel</div>
+                    <div class="text-lg font-bold">Organic (42%)</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Fastest Growing</div>
+                    <div class="text-lg font-bold">Referral (+18%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Series - Smoothed Trends -->
+        <div class="card p-6 md:col-span-2">
+            <h2 class="text-xl font-bold mb-4 text-primary">
+                <i class="fas fa-chart-line mr-2"></i>Key Metric Trends
+            </h2>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button class="px-3 py-1 bg-primary/20 text-primary rounded-lg text-sm">MRR</button>
+                <button class="px-3 py-1 bg-gray-700/50 text-gray-300 rounded-lg text-sm">Users</button>
+                <button class="px-3 py-1 bg-gray-700/50 text-gray-300 rounded-lg text-sm">CLV</button>
+                <button class="px-3 py-1 bg-gray-700/50 text-gray-300 rounded-lg text-sm">Churn</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="trends-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Actual Funnel Visualization -->
+        <div class="card p-6 md:col-span-2">
+            <h2 class="text-xl font-bold mb-4 text-primary">
+                <i class="fas fa-filter mr-2"></i>User Conversion Funnel
+            </h2>
+            <div class="funnel-container">
+                <canvas id="funnel-chart"></canvas>
+            </div>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Landing</div>
+                    <div class="text-lg font-bold">12.4K</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Signup</div>
+                    <div class="text-lg font-bold">6.8K</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Activation</div>
+                    <div class="text-lg font-bold">4.2K</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Paying</div>
+                    <div class="text-lg font-bold">2.1K</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Retained</div>
+                    <div class="text-lg font-bold">1.7K</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Channel Performance -->
+        <div class="card p-6">
+            <h2 class="text-xl font-bold mb-4 text-primary">
+                <i class="fas fa-tags mr-2"></i>Channel Efficiency
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Organic</span>
+                        <span class="font-bold">42%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="h-2 rounded-full bg-green-500" style="width: 42%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Paid</span>
+                        <span class="font-bold">28%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="h-2 rounded-full bg-blue-500" style="width: 28%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Referral</span>
+                        <span class="font-bold">18%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="h-2 rounded-full bg-purple-500" style="width: 18%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Social</span>
+                        <span class="font-bold">12%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="h-2 rounded-full bg-pink-500" style="width: 12%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Series - Improvements -->
+        <div class="card p-6 md:col-span-2">
+            <h2 class="text-xl font-bold mb-4 text-primary">
+                <i class="fas fa-trend-up mr-2"></i>Improvement Metrics
+            </h2>
+            <div class="chart-container">
+                <canvas id="improvements-chart"></canvas>
+            </div>
+            <div class="mt-4 grid grid-cols-3 gap-4">
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Activation Rate</div>
+                    <div class="text-lg font-bold text-green-400">+12%</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Time-to-Value</div>
+                    <div class="text-lg font-bold text-green-400">-2.1d</div>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">Churn Rate</div>
+                    <div class="text-lg font-bold text-red-400">+1.2%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize all charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Growth by Channel Chart
+            const channelCtx = document.getElementById('channel-chart').getContext('2d');
+            new Chart(channelCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Organic', 'Paid', 'Referral', 'Social', 'Email'],
+                    datasets: [{
+                        data: [42, 28, 18, 12, 8],
+                        backgroundColor: [
+                            '#00E676',
+                            '#448AFF',
+                            '#9C27B0',
+                            '#FF4081',
+                            '#FFD740'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#e2e8f0',
+                                padding: 20
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Time Series Trends Chart
+            const trendsCtx = document.getElementById('trends-chart').getContext('2d');
+            new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'MRR (in thousands)',
+                            data: [85, 92, 105, 112, 125, 138],
+                            borderColor: '#00E5FF',
+                            backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            fill: true
+                        },
+                        {
+                            label: 'Active Users',
+                            data: [4200, 4800, 5200, 5800, 6200, 6800],
+                            borderColor: '#00E676',
+                            backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Funnel Visualization
+            const funnelCtx = document.getElementById('funnel-chart').getContext('2d');
+            new Chart(funnelCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Landing', 'Signup', 'Activation', 'Paying', 'Retained'],
+                    datasets: [{
+                        label: 'Users',
+                        data: [12400, 6800, 4200, 2100, 1700],
+                        backgroundColor: [
+                            '#00E5FF',
+                            '#448AFF',
+                            '#00E676',
+                            '#FFD740',
+                            '#FF4081'
+                        ],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Improvements Chart
+            const improvementsCtx = document.getElementById('improvements-chart').getContext('2d');
+            new Chart(improvementsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Activation Rate',
+                            data: [32, 36, 38, 40, 42, 44],
+                            borderColor: '#00E676',
+                            backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Time-to-Value (days)',
+                            data: [4.2, 3.9, 3.7, 3.4, 3.1, 2.9],
+                            borderColor: '#FFD740',
+                            backgroundColor: 'rgba(255, 215, 64, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Churn Rate',
+                            data: [5.1, 5.3, 5.0, 5.2, 5.4, 5.6],
+                            borderColor: '#FF5252',
+                            backgroundColor: 'rgba(255, 82, 82, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
