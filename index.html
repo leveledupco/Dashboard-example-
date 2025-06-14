@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLG Analytics Dashboard | Product Lead Growth Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.0/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00E5FF',
+                        secondary: '#FF4081',
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        border: '#334155'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .funnel-bar {
+            transition: all 0.5s ease;
+        }
+        .funnel-bar:hover {
+            transform: scale(1.03);
+        }
+        .gauge {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+        .gauge-circle {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+    <div class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-primary mb-3">PLG Analytics Dashboard</h1>
+            <p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                Product-Led Growth metrics for SaaS optimization
+            </p>
+            <div class="mt-6">
+                <button id="reset-btn" class="bg-primary/20 hover:bg-primary/30 text-primary px-6 py-3 rounded-lg font-medium transition">
+                    <i class="fas fa-sync-alt mr-2"></i>Reset to Sample Data
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div class="dashboard-grid">
+            <!-- AARRR Funnel -->
+            <div class="card p-6">
+                <h2 class="text-xl font-bold mb-5 text-primary flex items-center">
+                    <i class="fas fa-filter mr-2"></i>AARRR Funnel
+                </h2>
+                <div class="space-y-4">
+                    <div class="funnel-bar">
+                        <div class="flex justify-between mb-1">
+                            <span>Acquisition</span>
+                            <span class="font-bold" id="acquisition-value">10,000</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="acquisition-bar" class="h-3 rounded-full bg-cyan-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="funnel-bar">
+                        <div class="flex justify-between mb-1">
+                            <span>Activation</span>
+                            <span class="font-bold" id="activation-value">4,200</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="activation-bar" class="h-3 rounded-full bg-blue-500" style="width: 42%"></div>
+                        </div>
+                        <div class="text-right text-sm text-gray-400 mt-1">
+                            Conversion: <span class="font-medium">42%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="funnel-bar">
+                        <div class="flex justify-between mb-1">
+                            <span>Retention</span>
+                            <span class="font-bold" id="retention-value">3,150</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="retention-bar" class="h-3 rounded-full bg-green-500" style="width: 31.5%"></div>
+                        </div>
+                        <div class="text-right text-sm text-gray-400 mt-1">
+                            Conversion: <span class="font-medium">75%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="funnel-bar">
+                        <div class="flex justify-between mb-1">
+                            <span>Revenue</span>
+                            <span class="font-bold" id="revenue-value">2,800</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="revenue-bar" class="h-3 rounded-full bg-yellow-500" style="width: 28%"></div>
+                        </div>
+                        <div class="text-right text-sm text-gray-400 mt-1">
+                            Conversion: <span class="font-medium">89%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="funnel-bar">
+                        <div class="flex justify-between mb-1">
+                            <span>Referral</span>
+                            <span class="font-bold" id="referral-value">630</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="referral-bar" class="h-3 rounded-full bg-pink-500" style="width: 6.3%"></div>
+                        </div>
+                        <div class="text-right text-sm text-gray-400 mt-1">
+                            Conversion: <span class="font-medium">22.5%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="card p-5">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-primary/20 p-2 rounded-lg mr-3">
+                            <i class="fas fa-users text-primary text-lg"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-300">DAU/MAU Ratio</h3>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold">42%</div>
+                        <div class="flex items-center text-green-400">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            <span class="text-sm">+5.2%</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm text-gray-400 mb-1">
+                            <span>Target: 45%</span>
+                            <span>Industry avg: 38%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-green-500" style="width: 42%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-5">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-primary/20 p-2 rounded-lg mr-3">
+                            <i class="fas fa-chart-bar text-primary text-lg"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-300">Feature Adoption</h3>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold">63%</div>
+                        <div class="flex items-center text-yellow-400">
+                            <span class="mr-1">↔</span>
+                            <span class="text-sm">±0.3%</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm text-gray-400 mb-1">
+                            <span>Target: 70%</span>
+                            <span>Last month: 62.7%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-blue-500" style="width: 63%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-5">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-primary/20 p-2 rounded-lg mr-3">
+                            <i class="fas fa-clock text-primary text-lg"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-300">Time-to-Value</h3>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold">2.4 days</div>
+                        <div class="flex items-center text-red-400">
+                            <i class="fas fa-arrow-down mr-1"></i>
+                            <span class="text-sm">-1.1%</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm text-gray-400 mb-1">
+                            <span>Target: 1.8 days</span>
+                            <span>Last quarter: 2.2 days</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-yellow-500" style="width: 75%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-5">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-primary/20 p-2 rounded-lg mr-3">
+                            <i class="fas fa-dollar-sign text-primary text-lg"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-300">Expansion MRR</h3>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold">$18.5K</div>
+                        <div class="flex items-center text-green-400">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            <span class="text-sm">+8.5%</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm text-gray-400 mb-1">
+                            <span>Target: $20K</span>
+                            <span>YoY Growth: 24%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-green-500" style="width: 92.5%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cohort Retention -->
+            <div class="card p-6 md:col-span-2">
+                <h2 class="text-xl font-bold mb-5 text-primary flex items-center">
+                    <i class="fas fa-layer-group mr-2"></i>Cohort Retention
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left pb-3 text-gray-400">Cohort</th>
+                                <th class="text-center pb-3 text-gray-400">Day 1</th>
+                                <th class="text-center pb-3 text-gray-400">Day 7</th>
+                                <th class="text-center pb-3 text-gray-400">Day 30</th>
+                                <th class="text-center pb-3 text-gray-400">Retention Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-700">
+                                <td class="py-4">Jan 2024</td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        95%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        80%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400">
+                                        60%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center text-green-400">
+                                        <i class="fas fa-arrow-up mr-1"></i> +2%
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-700">
+                                <td class="py-4">Feb 2024</td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        92%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/10 text-green-300">
+                                        78%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400">
+                                        58%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center text-red-400">
+                                        <i class="fas fa-arrow-down mr-1"></i> -2%
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-700">
+                                <td class="py-4">Mar 2024</td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        96%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        82%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        65%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center text-green-400">
+                                        <i class="fas fa-arrow-up mr-1"></i> +5%
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">Apr 2024</td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        94%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400">
+                                        81%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="inline-block px-3 py-1 rounded-full bg-green-500/10 text-green-300">
+                                        63%
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center text-yellow-400">
+                                        <span class="mr-1">↔</span> 0%
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Growth Trends -->
+            <div class="card p-6 md:col-span-2">
+                <h2 class="text-xl font-bold mb-5 text-primary flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>Growth Trends
+                </h2>
+                <div class="h-80">
+                    <canvas id="trends-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Feature Adoption -->
+            <div class="card p-6">
+                <h2 class="text-xl font-bold mb-5 text-primary flex items-center">
+                    <i class="fas fa-cube mr-2"></i>Feature Adoption
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span>Dashboard</span>
+                            <span class="font-bold">85%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div class="h-3 rounded-full bg-cyan-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-betwe
